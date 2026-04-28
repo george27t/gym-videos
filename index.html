@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>ספריית אימונים ויציבה 3D</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: 'Heebo', sans-serif;
+    background: #020617;
+    color: #fff;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #0f172a; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+
+  .header {
+    position: sticky; top: 0; z-index: 30;
+    background: rgba(2,6,23,0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(30,41,59,0.8);
+    padding: 0 16px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+  }
+  .logo-icon {
+    width: 38px; height: 38px; border-radius: 12px;
+    background: linear-gradient(135deg, #6366f1, #9333ea);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 20px rgba(99,102,241,0.4);
+  }
+  .logo-text h1 { font-size: 15px; font-weight: 900; color: #fff; line-height: 1; }
+  .logo-text p { font-size: 10px; color: #818cf8; letter-spacing: 0.15em; margin-top: 2px; }
+  .search-wrap { flex: 1; max-width: 300px; position: relative; }
+  .search-wrap input {
+    width: 100%;
+    background: rgba(30,41,59,0.8);
+    border: 1px solid rgba(51,65,85,0.6);
+    border-radius: 12px;
+    padding: 10px 36px 10px 12px;
+    color: #fff;
+    font-family: 'Heebo', sans-serif;
+    font-size: 14px;
+    outline: none;
+  }
+  .search-wrap input:focus { border-color: rgba(99,102,241,0.6); }
+  .search-wrap input::placeholder { color: #64748b; }
+  .search-icon {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    color: #64748b; pointer-events: none;
+  }
+
+  .cat-scroll {
+    overflow-x: auto; white-space: nowrap;
+    padding: 12px 16px;
+    display: flex; gap: 8px;
+    border-bottom: 1px solid rgba(30,41,59,0.5);
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .cat-scroll::-webkit-scrollbar { display: none; }
+  .cat-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px;
+    border-radius: 100px;
+    border: 1px solid rgba(51,65,85,0.6);
+    background: rgba(15,23,42,0.8);
+    color: #94a3b8;
+    font-size: 13px; font-weight: 600;
+    font-family: 'Heebo', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .cat-pill.active {
+    background: rgba(99,102,241,0.2);
+    border-color: rgba(99,102,241,0.5);
+    color: #a5b4fc;
+  }
+  .cat-pill.stretch-pill.active {
+    background: rgba(20,184,166,0.15);
+    border-color: rgba(20,184,166,0.4);
+    color: #5eead4;
+  }
+  .cat-count {
+    background: rgba(255,255,255,0.07);
+    border-radius: 100px;
+    padding: 1px 7px;
+    font-size: 11px;
+    color: #64748b;
+  }
+
+  .main { padding: 16px; }
+
+  .section-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 14px; margin-top: 8px;
+  }
+  .section-bar {
+    width: 4px; height: 22px; border-radius: 2px;
+  }
+  .section-bar.strength { background: linear-gradient(180deg, #6366f1, #9333ea); }
+  .section-bar.stretch { background: linear-gradient(180deg, #2dd4bf, #059669); }
+  .section-title { font-size: 16px; font-weight: 800; color: #f1f5f9; }
+  .section-count { font-size: 13px; color: #64748b; }
+  .stretch-badge {
+    font-size: 11px; padding: 3px 10px; border-radius: 100px;
+    background: rgba(20,184,166,0.1);
+    border: 1px solid rgba(20,184,166,0.3);
+    color: #5eead4;
+  }
+
+  .stretch-notice {
+    background: rgba(20,184,166,0.05);
+    border: 1px solid rgba(20,184,166,0.2);
+    border-radius: 12px;
+    padding: 12px 14px;
+    color: rgba(94,234,212,0.7);
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  @media (min-width: 480px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 768px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+
+  .card {
+    border-radius: 18px;
+    border: 1px solid rgba(51,65,85,0.4);
+    background: linear-gradient(135deg, #0f172a, rgba(30,41,59,0.6));
+    overflow: hidden;
+    cursor: pointer;
+    animation: fadeIn 0.3s ease forwards;
+    opacity: 0;
+  }
+  .card:active { transform: scale(0.97); }
+  .card.is-stretch {
+    background: linear-gradient(135deg, #0f172a, rgba(19,78,74,0.25));
+    border-color: rgba(20,184,166,0.2);
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-thumb {
+    position: relative; width: 100%; padding-top: 56.25%;
+    background: #1e293b; overflow: hidden;
+  }
+  .card-thumb img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; object-fit: cover;
+    opacity: 0.7;
+  }
+  .card-thumb-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, #0f172a 0%, transparent 60%);
+  }
+  .card-play {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .play-btn {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.25);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .play-btn svg { margin-right: -3px; }
+
+  .stretch-tag {
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(20,184,166,0.75);
+    color: #fff; font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 100px;
+    backdrop-filter: blur(4px);
+  }
+
+  .card-body { padding: 12px 14px 14px; }
+
+  .cat-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 700;
+    padding: 3px 10px; border-radius: 100px;
+    margin-bottom: 7px;
+  }
+  .cat-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+  .cat-חזה   { background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.3);color:#fb923c; }
+  .cat-dot-חזה   { background:#f97316; }
+  .cat-גב    { background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:#60a5fa; }
+  .cat-dot-גב    { background:#3b82f6; }
+  .cat-רגליים{ background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3);color:#c084fc; }
+  .cat-dot-רגליים{ background:#a855f7; }
+  .cat-כתפיים{ background:rgba(234,179,8,.1);border:1px solid rgba(234,179,8,.3);color:#facc15; }
+  .cat-dot-כתפיים{ background:#eab308; }
+  .cat-ידיים { background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#f87171; }
+  .cat-dot-ידיים { background:#ef4444; }
+  .cat-יציבה { background:rgba(20,184,166,.1);border:1px solid rgba(20,184,166,.3);color:#2dd4bf; }
+  .cat-dot-יציבה { background:#14b8a6; }
+
+  .card-name-he { font-size: 15px; font-weight: 800; color: #f1f5f9; line-height: 1.3; margin-bottom: 3px; }
+  .card-name-en { font-size: 12px; color: #64748b; margin-bottom: 12px; }
+
+  .watch-btn {
+    width: 100%; padding: 10px;
+    border-radius: 12px;
+    font-family: 'Heebo', sans-serif;
+    font-size: 13px; font-weight: 700;
+    cursor: pointer;
+    border: none; outline: none;
+  }
+  .watch-btn.strength-btn {
+    background: rgba(99,102,241,0.15);
+    color: #a5b4fc;
+    border: 1px solid rgba(99,102,241,0.3);
+  }
+  .watch-btn.stretch-btn {
+    background: rgba(20,184,166,0.12);
+    color: #5eead4;
+    border: 1px solid rgba(20,184,166,0.25);
+  }
+
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+  .modal-box {
+    width: 100%; max-width: 680px;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    border: 1px solid rgba(51,65,85,0.6);
+    border-radius: 20px;
+    overflow: hidden;
+    transform: translateY(20px);
+    transition: transform 0.25s;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.7);
+  }
+  .modal-overlay.open .modal-box { transform: translateY(0); }
+
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(51,65,85,0.4);
+  }
+  .modal-title { text-align: right; }
+  .modal-title h2 { font-size: 18px; font-weight: 800; color: #fff; }
+  .modal-title p  { font-size: 13px; color: #64748b; margin-top: 2px; }
+
+  .close-btn {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: rgba(30,41,59,0.8);
+    border: 1px solid rgba(51,65,85,0.5);
+    color: #94a3b8; font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+  }
+
+  .modal-video { position: relative; width: 100%; padding-top: 56.25%; background: #000; }
+  .modal-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+
+  .modal-footer {
+    padding: 14px 20px;
+    border-top: 1px solid rgba(51,65,85,0.4);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .yt-link {
+    display: flex; align-items: center; gap: 6px;
+    color: #64748b; font-size: 13px; text-decoration: none;
+  }
+  .yt-link:hover { color: #fff; }
+  .modal-hint { font-size: 11px; color: #334155; }
+
+  .empty {
+    text-align: center; padding: 64px 24px;
+  }
+  .empty-emoji { font-size: 48px; margin-bottom: 12px; }
+  .empty h3 { font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+  .empty p { color: #64748b; font-size: 14px; }
+  .clear-btn {
+    margin-top: 20px; padding: 10px 24px; border-radius: 12px;
+    background: #4f46e5; color: #fff; font-family: 'Heebo', sans-serif;
+    font-size: 14px; font-weight: 700; border: none; cursor: pointer;
+  }
+
+  @supports (padding-top: env(safe-area-inset-top)) {
+    .header { padding-top: env(safe-area-inset-top); height: calc(64px + env(safe-area-inset-top)); }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">💪</div>
+    <div class="logo-text">
+      <h1>ספריית אימונים ויציבה</h1>
+      <p>3D EXERCISE LIBRARY</p>
+    </div>
+  </div>
+  <div class="search-wrap">
+    <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+    </svg>
+    <input type="search" id="searchInput" placeholder="חיפוש תרגיל..." autocomplete="off">
+  </div>
+</header>
+
+<div class="cat-scroll" id="catScroll"></div>
+
+<main class="main" id="mainContent"></main>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <button class="close-btn" onclick="closeModalDirect()">✕</button>
+      <div class="modal-title">
+        <div id="modalBadge"></div>
+        <h2 id="modalNameHE"></h2>
+        <p id="modalNameEN"></p>
+      </div>
+    </div>
+    <div class="modal-video" id="modalVideo"></div>
+    <div class="modal-footer">
+      <a id="modalYTLink" href="#" target="_blank" class="yt-link">
+        <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+        פתח ב-YouTube
+      </a>
+      <span class="modal-hint">לחץ מחוץ לסגירה</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const exercises = [
+  { id:1,  category:"חזה",           nameHE:"לחיצת חזה בשכיבה",          nameEN:"Bench Press",           videoURL:"https://www.youtube.com/watch?v=SCVCLChPQFY", isStretching:false },
+  { id:2,  category:"חזה",           nameHE:"לחיצת חזה בשיפוע חיובי",    nameEN:"Incline Bench Press",   videoURL:"https://www.youtube.com/watch?v=DbFgADa2PL8", isStretching:false },
+  { id:3,  category:"חזה",           nameHE:"פשיטות חזה עם גומיות",       nameEN:"Cable Chest Fly",       videoURL:"https://www.youtube.com/watch?v=kiuVA0gs3EI", isStretching:false },
+  { id:4,  category:"חזה",           nameHE:"שכיבות שמיכה",               nameEN:"Push-Up",               videoURL:"https://www.youtube.com/watch?v=IODxDxX7oi4", isStretching:false },
+  { id:5,  category:"גב",            nameHE:"מושך רחב",                   nameEN:"Lat Pulldown",          videoURL:"https://www.youtube.com/watch?v=CAwf7n6Luuc", isStretching:false },
+  { id:6,  category:"גב",            nameHE:"חתירה בישיבה",               nameEN:"Seated Cable Row",      videoURL:"https://www.youtube.com/watch?v=GZbfZ033f74", isStretching:false },
+  { id:7,  category:"גב",            nameHE:"מתח",                        nameEN:"Pull-Up",               videoURL:"https://www.youtube.com/watch?v=eGo4IYlbE5g", isStretching:false },
+  { id:8,  category:"גב",            nameHE:"חתירה עם משקל חופשי",        nameEN:"Bent Over Row",         videoURL:"https://www.youtube.com/watch?v=6FZHJGzMFEc", isStretching:false },
+  { id:9,  category:"רגליים",        nameHE:"סקוואט",                     nameEN:"Squat",                 videoURL:"https://www.youtube.com/watch?v=ultWZbUMPL8", isStretching:false },
+  { id:10, category:"רגליים",        nameHE:"לגז",                        nameEN:"Leg Press",             videoURL:"https://www.youtube.com/watch?v=IZxyjW7MPJQ", isStretching:false },
+  { id:11, category:"רגליים",        nameHE:"פשיטות ירך",                 nameEN:"Leg Extension",         videoURL:"https://www.youtube.com/watch?v=YyvSfVjQeL0", isStretching:false },
+  { id:12, category:"רגליים",        nameHE:"כפיפות ירך",                 nameEN:"Leg Curl",              videoURL:"https://www.youtube.com/watch?v=1Tq3QdYUuHs", isStretching:false },
+  { id:13, category:"רגליים",        nameHE:"מדרגות עם משקל",             nameEN:"Romanian Deadlift",     videoURL:"https://www.youtube.com/watch?v=2SHsk9AzdjA", isStretching:false },
+  { id:14, category:"כתפיים",        nameHE:"לחיצת כתפיים",              nameEN:"Shoulder Press",         videoURL:"https://www.youtube.com/watch?v=qEwKCR5JCog", isStretching:false },
+  { id:15, category:"כתפיים",        nameHE:"הרמות לצד",                 nameEN:"Lateral Raise",          videoURL:"https://www.youtube.com/watch?v=3VcKaXpzqRo", isStretching:false },
+  { id:16, category:"כתפיים",        nameHE:"הרמות קדמיות",              nameEN:"Front Raise",            videoURL:"https://www.youtube.com/watch?v=sOoBFGgADFo", isStretching:false },
+  { id:17, category:"כתפיים",        nameHE:"פרפר הפוך",                 nameEN:"Reverse Fly",            videoURL:"https://www.youtube.com/watch?v=qzJSL_UMfxI", isStretching:false },
+  { id:18, category:"ידיים",         nameHE:"כפיפות מרפקים עם משקולות",  nameEN:"Dumbbell Bicep Curl",    videoURL:"https://www.youtube.com/watch?v=ykJmrZ5v0Oo", isStretching:false },
+  { id:19, category:"ידיים",         nameHE:"פשיטות מרפקים בסגולה",      nameEN:"Tricep Pushdown",        videoURL:"https://www.youtube.com/watch?v=2-LAMcpzODU", isStretching:false },
+  { id:20, category:"ידיים",         nameHE:"פריצת פטיש",                nameEN:"Hammer Curl",            videoURL:"https://www.youtube.com/watch?v=TwD-YGVP4Bk", isStretching:false },
+  { id:21, category:"ידיים",         nameHE:"שכיבות שמיכה צרות",         nameEN:"Close Grip Push-Up",     videoURL:"https://www.youtube.com/watch?v=u4zQ3A7EPBQ", isStretching:false },
+  { id:22, category:"יציבה ומתיחות", nameHE:"מתיחת חזה בקיר",            nameEN:"Wall Chest Stretch",     videoURL:"https://www.youtube.com/watch?v=vSGaOSKjxME", isStretching:true },
+  { id:23, category:"יציבה ומתיחות", nameHE:"גשר לחיזוק הגב",            nameEN:"Glute Bridge",           videoURL:"https://www.youtube.com/watch?v=wPM8icPu6H8", isStretching:true },
+  { id:24, category:"יציבה ומתיחות", nameHE:"חתול-פרה (יוגה)",           nameEN:"Cat-Cow Stretch",        videoURL:"https://www.youtube.com/watch?v=kqnua4rHVVA", isStretching:true },
+  { id:25, category:"יציבה ומתיחות", nameHE:"פלנק לחיזוק הליבה",         nameEN:"Plank Hold",             videoURL:"https://www.youtube.com/watch?v=ASdvN_XEl_c", isStretching:true },
+  { id:26, category:"יציבה ומתיחות", nameHE:"מתיחת ישבן - ציפור",        nameEN:"Pigeon Pose",            videoURL:"https://www.youtube.com/watch?v=o1RMeKDqIFQ", isStretching:true },
+  { id:27, category:"יציבה ומתיחות", nameHE:"סיבובי כתפיים",             nameEN:"Shoulder Rolls",         videoURL:"https://www.youtube.com/watch?v=K1Eu1OYWB1k", isStretching:true },
+  { id:28, category:"יציבה ומתיחות", nameHE:"מתיחת צוואר וכתפיים",       nameEN:"Neck & Shoulder Stretch",videoURL:"https://www.youtube.com/watch?v=2TQNP3KFLqk", isStretching:true },
+];
+
+const categories = [
+  { key:"all",             label:"הכל",             icon:"⚡", isStretch:false },
+  { key:"חזה",             label:"חזה",             icon:"💪", isStretch:false },
+  { key:"גב",              label:"גב",              icon:"🏋️", isStretch:false },
+  { key:"רגליים",          label:"רגליים",          icon:"🦵", isStretch:false },
+  { key:"כתפיים",          label:"כתפיים",          icon:"🏆", isStretch:false },
+  { key:"ידיים",           label:"ידיים",           icon:"✊", isStretch:false },
+  { key:"יציבה ומתיחות",  label:"יציבה ומתיחות",  icon:"🧘", isStretch:true  },
+];
+
+let activeCategory = "all";
+let searchQuery = "";
+
+function getYTId(url) {
+  const m = url.match(/(?:v=|youtu\.be\/)([^&?/]+)/);
+  return m ? m[1] : null;
+}
+
+function catColorKey(cat) {
+  return cat === "יציבה ומתיחות" ? "יציבה" : cat;
+}
+
+function renderCats() {
+  const wrap = document.getElementById("catScroll");
+  wrap.innerHTML = categories.map(c => {
+    const count = c.key === "all" ? exercises.length : exercises.filter(e => e.category === c.key).length;
+    const active = activeCategory === c.key ? "active" : "";
+    const stretch = c.isStretch ? "stretch-pill" : "";
+    return `<button class="cat-pill ${active} ${stretch}" onclick="selectCat('${c.key}')">
+      ${c.icon} ${c.label}
+      <span class="cat-count">${count}</span>
+    </button>`;
+  }).join("");
+}
+
+function selectCat(key) {
+  activeCategory = key;
+  renderCats();
+  renderCards();
+}
+
+function renderCards() {
+  const main = document.getElementById("mainContent");
+  const q = searchQuery.toLowerCase();
+
+  const filtered = exercises.filter(ex => {
+    const matchCat = activeCategory === "all" || ex.category === activeCategory;
+    const matchSearch = !q || ex.nameHE.includes(q) || ex.nameEN.toLowerCase().includes(q) || ex.category.includes(q);
+    return matchCat && matchSearch;
+  });
+
+  if (filtered.length === 0) {
+    main.innerHTML = `<div class="empty">
+      <div class="empty-emoji">🔍</div>
+      <h3>לא נמצאו תרגילים</h3>
+      <p>נסה חיפוש אחר או בחר קטגוריה אחרת</p>
+      <button class="clear-btn" onclick="clearAll()">הצג הכל</button>
+    </div>`;
+    return;
+  }
+
+  const strength = filtered.filter(e => !e.isStretching);
+  const stretch  = filtered.filter(e =>  e.isStretching);
+
+  let html = "";
+
+  if (strength.length > 0) {
+    html += `<div class="section-header">
+      <div class="section-bar strength"></div>
+      <span class="section-title">תרגילי כוח</span>
+      <span class="section-count">${strength.length} תרגילים</span>
+    </div>`;
+    html += `<div class="grid">${strength.map((ex, i) => cardHTML(ex, i)).join("")}</div>`;
+  }
+
+  if (stretch.length > 0) {
+    html += `<div class="section-header">
+      <div class="section-bar stretch"></div>
+      <span class="section-title">יציבה ומתיחות</span>
+      <span class="section-count">${stretch.length} תרגילים</span>
+      <span class="stretch-badge">מומלץ לסיום אימון</span>
+    </div>`;
+    if (strength.length > 0) {
+      html += `<div class="stretch-notice">🧘 תרגילי מתיחות ויציבה — מומלץ לבצע בסוף האימון לשיפור גמישות ויציבה</div>`;
+    }
+    html += `<div class="grid">${stretch.map((ex, i) => cardHTML(ex, i + strength.length)).join("")}</div>`;
+  }
+
+  main.innerHTML = html;
+}
+
+function cardHTML(ex, idx) {
+  const ytId = getYTId(ex.videoURL);
+  const thumb = ytId ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg` : "";
+  const ck = catColorKey(ex.category);
+  const delay = Math.min(idx * 40, 400);
+  const btnClass = ex.isStretching ? "stretch-btn" : "strength-btn";
+  const cardClass = ex.isStretching ? "card is-stretch" : "card";
+
+  return `<div class="${cardClass}" style="animation-delay:${delay}ms" onclick="openModal(${ex.id})">
+    <div class="card-thumb">
+      ${thumb ? `<img src="${thumb}" alt="${ex.nameEN}" loading="lazy">` : ""}
+      <div class="card-thumb-overlay"></div>
+      <div class="card-play">
+        <div class="play-btn">
+          <svg width="18" height="18" fill="white" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+      </div>
+      ${ex.isStretching ? '<span class="stretch-tag">מתיחה</span>' : ""}
+    </div>
+    <div class="card-body">
+      <div class="cat-badge cat-${ck}">
+        <span class="cat-dot cat-dot-${ck}"></span>
+        ${ex.category}
+      </div>
+      <div class="card-name-he">${ex.nameHE}</div>
+      <div class="card-name-en">${ex.nameEN}</div>
+      <button class="watch-btn ${btnClass}">▶ צפה בהדרכה</button>
+    </div>
+  </div>`;
+}
+
+function openModal(id) {
+  const ex = exercises.find(e => e.id === id);
+  if (!ex) return;
+  const ck = catColorKey(ex.category);
+  document.getElementById("modalNameHE").textContent = ex.nameHE;
+  document.getElementById("modalNameEN").textContent = ex.nameEN;
+  document.getElementById("modalBadge").innerHTML =
+    `<div class="cat-badge cat-${ck}" style="margin-bottom:6px">
+      <span class="cat-dot cat-dot-${ck}"></span>${ex.category}
+    </div>`;
+  document.getElementById("modalYTLink").href = ex.videoURL;
+  const ytId = getYTId(ex.videoURL);
+  document.getElementById("modalVideo").innerHTML = ytId
+    ? `<iframe src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&rel=0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`
+    : `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#64748b">לא ניתן לטעון סרטון</div>`;
+  document.getElementById("modalOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById("modalOverlay")) closeModalDirect();
+}
+function closeModalDirect() {
+  document.getElementById("modalOverlay").classList.remove("open");
+  document.getElementById("modalVideo").innerHTML = "";
+  document.body.style.overflow = "";
+}
+
+function clearAll() {
+  activeCategory = "all";
+  searchQuery = "";
+  document.getElementById("searchInput").value = "";
+  renderCats();
+  renderCards();
+}
+
+document.getElementById("searchInput").addEventListener("input", function() {
+  searchQuery = this.value;
+  renderCards();
+});
+
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeModalDirect(); });
+
+renderCats();
+renderCards();
+</script>
+</body>
+</html>
